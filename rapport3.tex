@@ -1,0 +1,219 @@
+\documentclass[a4paper,12pt]{article}
+
+% --- Encodage & langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% --- Mise en page & graphiques ---
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{float} % pour [H]
+
+% --- Listings (code) ---
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{amssymb}
+\lstset{
+  inputencoding=utf8,
+  language=Scilab,
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny,
+  breaklines=true,
+  frame=single,
+  captionpos=b,
+  showstringspaces=false,
+  keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{orange!60!black}
+}
+
+% --- Définition du langage Scilab pour listings ---
+\lstdefinelanguage{Scilab}{%
+  morekeywords={function,endfunction,then,else,elseif,select,case,while,for,end,if,return,printf,disp,mprintf,linspace,plot,subplot,xtitle,clf,sqrt,exp,sinh,zeros,sum,null,integrate,LegendreP,deff},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]"
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \thispagestyle{empty}
+  \centering
+
+  \vspace*{1cm}
+  \includegraphics[width=7cm]{logo_utc.png}\par
+  \vspace{1cm}
+
+  {\Large \scshape Université de Technologie de Compiègne \par}
+  \vspace{1cm}\hrule\vspace{0.5cm}
+
+  {\huge \bfseries MT12 — TP3\par}
+  \vspace{0.3cm}
+  {\Large \bfseries RAPPORT \par}
+  \vspace{0.5cm}\hrule\vspace{2cm}
+
+  {\large
+  \textbf{Rédigé par :}\par\vspace{0.5cm}
+  Ghita \textsc{FAYEK}\par
+  Mathis \textsc{MILLOT}\par}
+  \vfill
+
+  {\large Le 7 novembre 2025 — Compiègne\par}
+\end{titlepage}
+
+\newpage
+\section*{Introduction}
+Ce travail pratique porte sur l'étude numérique de la convergence des séries de Fourier pour des fonctions périodiques. L'objectif est d'illustrer par le calcul et la visualisation les propriétés théoriques vues en cours, tout en mettant en évidence certains phénomènes particuliers.\\
+Le TP se divise en trois parties. Nous développons d'abord une méthode d'intégration numérique par la méthode des rectangles, qui permettra d'encadrer les intégrales avec une précision contrôlée. Cette fonction Riemann servira de base pour les calculs des coefficients de Fourier.\\
+Dans la deuxième partie, nous étudions la convergence ponctuelle de la série de Fourier d'une fonction périodique continue et régulière par morceaux. Le calcul des coefficients et la comparaison graphique avec les sommes partielles permettent de vérifier la convergence uniforme prédite par la théorie.\\
+Enfin, la troisième partie analyse le cas d'une fonction discontinue, faisant apparaître le phénomène de Gibbs au voisinage des discontinuités. Nous illustrons également la convergence en norme $L^2$, qui reste garantie malgré l'absence de convergence ponctuelle en certains points.
+\section*{Objectif du TP}L'objectif principal de ce TP est d'étudier, de calculer et d'illustrer la convergence des séries de Fourier pour deux types de fonctions périodiques.
+Les objectifs spécifiques sont les suivants :\\
+- Partie 1 : Implémenter et tester une fonction Riemann$(f, a, b, \epsilon)$ capable de fournir un encadrement d'une intégrale avec une précision $\epsilon$ donnée.\\
+- Partie 2 : Analyser la convergence ponctuelle de la série de Fourier pour une fonction périodique régulière (continue). Cela impliquera le calcul manuel des coefficients $a_k$ et $b_k$ et la comparaison graphique de la fonction $f$ avec ses sommes partielles $f_N(x)$.\\
+- Partie 3 : Étudier le comportement d'une fonction périodique discontinue afin de mettre en évidence le phénomène de Gibbs.
+
+\section*{Partie 1 — Intégration d'une fonction continue sur un intervalle borné}
+
+\subsection*{Question 1.1}
+\begin{lstlisting}[language=Scilab, caption={Valeur approchée de I}]
+function [Imoins, Iplus, N]=Riemann(f, a, b, epsilon)
+    nsubdiv = 20; // Voir la Remarque juste apres
+    N = 1;
+    done = %F;
+    while (~done)
+        N = 2 * N;
+        Imoins = 0;
+        Iplus = 0;
+        for k = 1:N
+          Ik = [ a+(k-1)*(b-a)/N, a+k*(b-a)/N ]; // (1)
+            subdiv = linspace(Ik(1), Ik(2), nsubdiv) ; // Subdivision de l'intervalle
+            fmin = min(f(subdiv));
+            fmax = max(f(subdiv));
+            Imoins = Imoins + fmin;
+            Iplus = Iplus + fmax;
+        end
+    Imoins = ((b-a)/N) * Imoins;
+    Iplus = ((b-a)/N) * Imoins;
+    done = (Iplus - Imoins) < epsilon;
+    end; // (while)
+endfunction
+\end{lstlisting}
+
+\subsection*{Question 1.2}
+\begin{lstlisting}[language=Scilab, caption={Teste sur l'exemple \(f(x) = \sin(\pi x)\)}]
+function y=sin_pi(x)
+    y= sin(%pi.*x)
+endfunction
+
+[Imoins, Iplus, N] = Riemann(f, 0, 1, 1e-4);
+I_Riemann = (Imoins + Iplus)/2;
+
+disp('Imoins Iplus I_Riemann=', [Imoins, Iplus, I_Riemann]);
+
+I_intg = integrate('sin_pi(x)', 'x', 0, 1);
+disp('intg(0, 1, f)=', I_intg);
+\end{lstlisting}
+
+\subsection*{Question 1.3}
+\begin{lstlisting}[language=Scilab, caption={Méthode des rectangles à gauche}]
+function I=RectanglesGauche(f, a, b, N)
+    h = (b-a)/N;
+    xs = a + (0:(N-1))*h;
+    I = sum(f(xs));
+endfunction
+//test
+deff('y=f(x)','y=sin(%pi*x)');
+I_g = RectanglesGauche(f, 0, 1, 2000);
+disp('Rectangles_gauche=', I_g);
+\end{lstlisting}
+
+\newpage
+
+\section*{Partie 2 : Convergence ponctuelle de la série de Fourier d'une fonction périodique régulière}
+
+\subsection*{Question 2.4}
+\begin{lstlisting}[language=Scilab, caption={f sur l'intervalle [0,2]}]
+function y=f(x)
+    y = x
+    I = find(x >= 1 & x <= 2);
+    y(I) = 2 - x(I);
+endfunction
+
+X = linspace(0, 2, 1000);
+plot(X, f(X)); xgrid(); title('f sur [0,2]'); xlabel('x'); ylabel('f(x)');
+\end{lstlisting}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\textwidth]{question4.png}
+  \caption{Graphe question 4}
+  \label{fig:4}
+\end{figure}
+
+\newpage
+\subsection*{Question 2.5}
+On sait que $f$ est une fonction paire, donc tous les coefficients $b_k$ sont nuls.
+On a $a_k = \frac{1}{k^2\pi^2}(2(-1)^k - 2)$.
+Si $k$ est pair, $a_k = 0$.
+Si $k$ est impair, $a_k = -\frac{-4}{(2n+1)^2\pi^2}$. 
+
+\subsection*{Question 2.6}
+En partant de $f_N(x) = \frac{a_0}{2} + \sum_{k=1}^{N} a_k cos(k \pi x)$,
+En ne gardant que les k impaires, $k = 2n + 1$, avec $a_0 = 1$ et $a_{2n+1} = -\frac{4}{(2n+1)^2\pi^2}$, on obtient :
+$$ f_{2n+1}(x) = \frac{1}{2} - \frac{4}{\pi^2}\sum_{n=0}^{N} \frac{cos((2n+1)\pi x)}{(2n+1)^2} $$
+Le Changement de variable est donc $ k = 2n + 1 $ avec $n\in \mathbb{N}$.
+
+\subsection*{Question 2.7}
+\begin{lstlisting}[language=Scilab, caption={Comparaison de f et de son approximation}]
+function y1=f2NPlus1(x, N)
+    dL=0; 
+    for k = 0:N
+        dL = dL + cos((2*k+1)*%pi.*x) / ((2*k+1).^2);
+    end
+    y1 = 1/2 - (4/%pi^2) .* dL;
+endfunction
+
+scf(1);
+clf();
+
+X = linspace(0, 2, 2000); 
+Y_true = f(X); 
+
+N = [2 4 8 16 32 64 128 256];
+nN = zeros(length(N) + 1, length(X));
+nN(1, :) = Y_true;
+
+legend_strings = "f(x) (exacte)";
+for i = 1:length(N_valu)
+    N = N(i);
+    nN(i + 1, :) = f2NPlus1(X, N);
+    legend_strings(i + 1) = "N = " + string(N);
+end
+
+plot(X, nN);
+xtitle('Question 7: Comparaison de f et f_{2N+1} sur [0, 2]');
+xlabel('x');
+ylabel('y');
+legend(legend_strings);
+
+for N = [2 4 8 16 32 64 128 256]
+    Y = f2NPlus1(X,N);
+    plot(X,Y);
+end
+
+\end{lstlisting}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\textwidth]{question7.png}
+  \caption{Graphe question 7}
+  \label{fig:7}
+\end{figure}
+
+\section*{Partie 3 : Phénomène de Gibbs pour une fonction périodique discontinue}
+
+
+\end{document}
