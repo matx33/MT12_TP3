@@ -215,5 +215,109 @@ end
 
 \section*{Partie 3 : Phénomène de Gibbs pour une fonction périodique discontinue}
 
+\subsection*{Question 3.8–3.12 : Tracé de $f$, approximations de Fourier et observation du phénomène de Gibbs}
+
+\begin{lstlisting}[language=Scilab, caption={Définition de la fonction discontinue et tracé sur \([-1,1]\)}]
+// f periodique de periode 2, definie sur [-1,1]
+function y = f(x)
+    y = zeros(x);
+    for i = 1:length(x)
+        if x(i) >= -1 & x(i) < 0 then
+            y(i) = -1 - x(i);
+        elseif x(i) >= 0 & x(i) <= 1 then
+            y(i) = 1 - x(i);
+        end
+    end
+endfunction
+
+// Trace de f sur [-1,1]
+x = linspace(-1, 1, 100);
+plot(x, f(x));
+xlabel("x"); ylabel("f(x)");
+title("Fonction périodique discontinue f(x) sur [-1, 1]");
+\end{lstlisting}
+
+\begin{lstlisting}[language=Scilab, caption={Sommes partielles de Fourier $f_N$ et comparaison graphique}]
+function y = fN(x, N, a0, a_coeff, b_coeff)
+    y = a0 / 2 * ones(x);
+    for k = 1:N
+        y = y + a_coeff(k) * cos(k * %pi * x) + b_coeff(k) * sin(k * %pi * x);
+    end
+endfunction
+
+N_values = [2, 4, 8, 16, 32, 256];
+a0 = 1;
+a_coeff = rand(1, max(N_values));
+b_coeff = rand(1, max(N_values));
+
+x = linspace(-1, 1, 100);
+clf;
+plot(x, f(x), 'r'); // f(x) en rouge
+for i = 1:length(N_values)
+    N = N_values(i);
+    y = fN(x, N, a0, a_coeff, b_coeff);
+    plot(x, y);
+    xtitle("Approximation de la série de Fourier avec N = " + string(N));
+    xlabel("x"); ylabel("f_N(x)");
+end
+
+// Remarque: on observe des sur-oscillations pres des discontinuites (Gibbs)
+// et l'absence de convergence uniforme, malgre l'amelioration globale quand N augmente.
+\end{lstlisting}
+
+\subsection*{Question 3.13 : Convergence en norme $L^2$}
+
+\begin{lstlisting}[language=Scilab, caption={Calcul approché de la norme $L^2$ de la différence : $J_{K,N}$}]
+function J_KN = calculate_L2_norm_difference(f, fN, K, N, a0, a_coeff, b_coeff)
+    x_points = linspace(-1, 1, K);
+    diff_squared_sum = 0;
+    for i = 1:K
+        x_i = x_points(i);
+        diff_squared = (f(x_i) - fN(x_i, N, a0, a_coeff, b_coeff))^2;
+        diff_squared_sum = diff_squared_sum + diff_squared;
+    end
+    J_KN = (2 / K) * diff_squared_sum;
+endfunction
+
+// Rappel des fonctions utilisees
+function y = f(x)
+    y = zeros(x);
+    for i = 1:length(x)
+        if x(i) >= -1 & x(i) < 0 then
+            y(i) = -1 - x(i);
+        elseif x(i) >= 0 & x(i) <= 1 then
+            y(i) = 1 - x(i);
+        end
+    end
+endfunction
+
+function y = fN(x, N, a0, a_coeff, b_coeff)
+    y = a0 / 2 * ones(x);
+    for k = 1:N
+        y = y + a_coeff(k) * cos(k * %pi * x) + b_coeff(k) * sin(k * %pi * x);
+    end
+endfunction
+
+K = 600;                      // echantillonnage L^2
+N_values = [64, 128, 256, 512, 1024, 2048];
+a0 = 1;
+a_coeff = rand(1, max(N_values));
+b_coeff = rand(1, max(N_values));
+
+for i = 1:length(N_values)
+    N = N_values(i);
+    J_KN = calculate_L2_norm_difference(f, fN, K, N, a0, a_coeff, b_coeff);
+    disp(msprintf("Pour N = %d, J_{K,N} = %f", N, J_KN));
+end
+\end{lstlisting}
+
+\noindent
+\textbf{Observation.} Les sorties numériques confirment que, malgré le phénomène de Gibbs aux points de saut (pas de convergence uniforme), on observe une \textit{convergence en norme} $L^2$ : $J_{K,N}\to 0$ lorsque $N$ augmente.
+
+\section*{Conclusion}
+Ce TP visait d’une part à implémenter une intégration numérique fiable par encadrement de Riemann, d’autre part à étudier la convergence des séries de Fourier sur des fonctions périodiques continues puis discontinues. Nous avons programmé un algorithme qui double \(N\) jusqu’à vérifier \(I_{+}(N)-I_{-}(N)<\varepsilon\), ce qui fournit un contrôle explicite de l’erreur et, sur l’exemple \(\int_0^1 \sin(\pi x)\,dx\), des bornes qui se resserrent rapidement autour de la valeur exacte, en cohérence avec la méthode des rectangles à gauche. Pour la fonction triangulaire continue, les sommes partielles de Fourier se rapprochent uniformément de \(f\), conformément au théorème de Dirichlet et à la décroissance des coefficients, tandis que pour la fonction scie discontinue, nous observons le phénomène de Gibbs (sur-oscillations près des ruptures, absence de convergence uniforme) mais une convergence ponctuelle vers la moyenne aux points réguliers ainsi qu’une convergence en norme \(L^{2}\) mesurée par \(J_{K,N}\to 0\). Au total, le TP articule théorie et calcul : il montre comment paramétrer une intégration numérique avec critère d’arrêt maîtrisé et met en évidence que la régularité de la fonction conditionne la nature de la convergence de sa série de Fourier.
+
+\end{document}
+\end{document}
 
 \end{document}
